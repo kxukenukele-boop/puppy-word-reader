@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#f7f2e8" />
+  <meta name="color-scheme" content="light dark" />
+  <title>小狗单词故事阅读器</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <button id="homeBtn" class="icon-btn" aria-label="回到书架" title="书架">☰</button>
+      <div class="title-wrap">
+        <div id="appTitle" class="app-title">小狗单词故事</div>
+        <div id="docTitle" class="doc-title"></div>
+      </div>
+      <div class="top-actions">
+        <button id="fontMinusBtn" class="icon-btn reader-only" aria-label="减小字号">A−</button>
+        <button id="fontPlusBtn" class="icon-btn reader-only" aria-label="增大字号">A+</button>
+        <button id="themeBtn" class="icon-btn" aria-label="切换主题">◐</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="libraryView" class="view library-view">
+        <div class="hero card">
+          <div class="hero-mark">🐾</div>
+          <div>
+            <h1>主主写的小狗单词故事，慢慢看。</h1>
+            <p>打开 <strong>.docx</strong>，保留粗体新词；自动记住上次位置；长按或选中英文单词即可离线查词。</p>
+          </div>
+          <div class="hero-actions">
+            <label class="primary-btn file-label">
+              打开 Word
+              <input id="docxInput" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden />
+            </label>
+            <button id="dictionaryBtn" class="secondary-btn">离线词典</button>
+          </div>
+        </div>
+
+        <section class="section-block">
+          <div class="section-heading">
+            <h2>最近阅读</h2>
+            <button id="clearDocsBtn" class="text-btn danger">清空书架</button>
+          </div>
+          <div id="docList" class="doc-list"></div>
+          <div id="emptyDocs" class="empty-state">还没有故事。打开一个 Word，它会留在这台设备上。</div>
+        </section>
+
+        <section class="card compact-card offline-note">
+          <div class="status-row">
+            <span id="offlineDot" class="status-dot"></span>
+            <strong id="offlineText">正在检查离线状态…</strong>
+          </div>
+          <p>文档、阅读进度和导入后的词典只保存在当前浏览器。本应用不上传你的 Word 内容。</p>
+        </section>
+      </section>
+
+      <section id="readerView" class="view reader-view hidden" aria-live="polite">
+        <div id="readingProgress" class="reading-progress"><span></span></div>
+        <article id="reader" class="reader" tabindex="0"></article>
+        <button id="continueBtn" class="continue-pill hidden">回到上次位置</button>
+      </section>
+    </main>
+  </div>
+
+  <div id="dictionaryModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="dictionaryTitle">
+    <div class="modal-backdrop" data-close="dictionary"></div>
+    <div class="modal-panel settings-panel">
+      <div class="panel-handle"></div>
+      <div class="panel-header">
+        <h2 id="dictionaryTitle">离线词典</h2>
+        <button class="icon-btn" data-close="dictionary" aria-label="关闭">×</button>
+      </div>
+      <div class="dictionary-status card inset-card">
+        <div><strong id="dictStatusTitle">尚未导入 ECDICT</strong></div>
+        <div id="dictStatusDetail" class="muted">导入一次后，查词会保存在本机。</div>
+      </div>
+      <p class="help-text">请选择 ECDICT 的 <code>ecdict.csv</code>。导入过程可能需要几分钟；文件不会上传。</p>
+      <label class="primary-btn file-label full-width">
+        选择 ecdict.csv
+        <input id="dictInput" type="file" accept=".csv,text/csv" hidden />
+      </label>
+      <div id="importProgressWrap" class="import-progress-wrap hidden">
+        <div class="import-progress"><span id="importProgressBar"></span></div>
+        <div id="importProgressText" class="muted">准备导入…</div>
+      </div>
+      <button id="clearDictionaryBtn" class="secondary-btn full-width danger-outline">删除本机词典</button>
+      <div class="fine-print">发音使用系统 Speech Synthesis。是否能断网发音取决于设备是否安装了本地英语语音。</div>
+    </div>
+  </div>
+
+  <div id="lookupSheet" class="lookup-sheet hidden" role="dialog" aria-live="polite">
+    <div class="lookup-card">
+      <div class="lookup-topline">
+        <div>
+          <div id="lookupWord" class="lookup-word"></div>
+          <div id="lookupPhonetic" class="lookup-phonetic"></div>
+        </div>
+        <div class="lookup-actions">
+          <button id="speakBtn" class="round-btn" aria-label="朗读单词" title="朗读">🔊</button>
+          <button id="closeLookupBtn" class="round-btn" aria-label="关闭">×</button>
+        </div>
+      </div>
+      <div id="lookupPos" class="lookup-pos"></div>
+      <div id="lookupTranslation" class="lookup-translation"></div>
+      <div id="lookupHint" class="lookup-hint"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.12.2/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.15/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.7.0/papaparse.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
